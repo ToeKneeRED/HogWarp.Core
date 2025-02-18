@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HogWarp.Chat", "HogWarp.Cha
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HogWarp.Weather", "HogWarp.Weather\HogWarp.Weather.csproj", "{A2D4E4CB-6E57-42EB-8A19-B11BFB583961}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HogWarp.Game", "HogWarp.Game\HogWarp.Game.csproj", "{D103AED6-C47C-445C-9466-D049B34B24FA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{A2D4E4CB-6E57-42EB-8A19-B11BFB583961}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A2D4E4CB-6E57-42EB-8A19-B11BFB583961}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A2D4E4CB-6E57-42EB-8A19-B11BFB583961}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D103AED6-C47C-445C-9466-D049B34B24FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D103AED6-C47C-445C-9466-D049B34B24FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D103AED6-C47C-445C-9466-D049B34B24FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D103AED6-C47C-445C-9466-D049B34B24FA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
