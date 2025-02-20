@@ -55,9 +55,10 @@ namespace HogWarp.Weather
             SendTimeUpdate();
             if (weatherActor != null)
             {
-                if(HogWarpSdk.Server.PlayerSystem.Players.First() != null)
+                var syncPlayer = HogWarpSdk.Server.PlayerSystem.Players.FirstOrDefault();
+                if(syncPlayer != null)
                 {
-                    weatherActor.RequestWeather(HogWarpSdk.Server.PlayerSystem.Players.First());
+                    weatherActor.RequestWeather(syncPlayer);
                 }
             }
         }
