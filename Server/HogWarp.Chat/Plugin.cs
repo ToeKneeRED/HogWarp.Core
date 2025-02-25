@@ -8,19 +8,17 @@ namespace HogWarp.Chat
     public class Plugin : HogWarpSdk.IPlugin
     {
         private Logger log = new Logger("HogWarpChat");
-        public event Action<Player, string> OnChatMessage;
+        public event Action<Player, string>? OnChatMessage;
+        public HogWarpSdk.Game.Timer.TickDelegate OnPlayerJoinDelegate;
         private float sayDist = 400;
         private float shoutDist = 1500;
         private float whisperDist = 100;
-        private BP_HogWarpChat? chatActor;
+        private BP_HogWarpChat chatActor;
         public bool chatMsgOverride = false;
         private Dictionary<string, Action<Player, string>> commands = new Dictionary<string, Action<Player, string>>();
 
         public Plugin()
         {
-            OnChatMessage += Chat_OnChatMessage;
-
-
         }
 
         public string Author => "HogWarp Team";
@@ -31,9 +29,13 @@ namespace HogWarp.Chat
 
         public void PostLoad()
         {
+            HogWarpSdk.Server.PlayerSystem.PlayerJoinEvent += Chat_PlayerJoinEvent;
+            HogWarpSdk.Server.PlayerSystem.PlayerLeftEvent += Chat_PlayerLeftEvent;
+            OnChatMessage += Chat_OnChatMessage;
+
             chatActor = HogWarpSdk.Server.World.Spawn<BP_HogWarpChat>()!;
             chatActor.Plugin = this;
-
+            
             commands.Add("/me", SlashMe);
             commands.Add("/house", SlashHouse);
             commands.Add("/say", SlashDistMsg);
@@ -64,21 +66,22 @@ namespace HogWarp.Chat
 
         public void ReceiveMessage(Player player, string msg)
         {
-            if (OnChatMessage != null)
-                OnChatMessage.Invoke(player, msg);
+            OnChatMessage?.Invoke(player, msg);
         }
 
-        public void SendMessage(Player player, string msg)
+        public void SendMessage(Player player, ulong senderId, string msg)
         {
             if (chatActor != null)
-                chatActor.RecieveMsg(player, msg);
+            {
+                chatActor.RecieveMsg(player, (int)senderId, msg);
+            }
         }
 
         private void SlashMe(Player player, string msg)
         {
             foreach (var p in HogWarpSdk.Server.PlayerSystem.Players)
             {
-                SendMessage(p, "<Server>" + player.Username + msg.Substring(3) + "</>");
+                SendMessage(p, player.Id, "<Server>" + player.Username + msg.Substring(3) + "</>");
             }
         }
 
@@ -86,7 +89,7 @@ namespace HogWarp.Chat
         {
             foreach (var p in HogWarpSdk.Server.PlayerSystem.Players.Where(p => p.House == player.House))
             {
-                SendMessage(p, "<img id=\"" + (House)player.House + "\"/><" + (House)player.House + ">" + player.Username + ": " + msg.Substring(7) + "</>");
+                SendMessage(p, player.Id, "<img id=\"" + (House)player.House + "\"/><" + (House)player.House + ">" + player.Username + ": " + msg.Substring(7) + "</>");
             }
         }
 
@@ -108,7 +111,7 @@ namespace HogWarp.Chat
 
                 if (dist.Length() <= msgDist)
                 {
-                    SendMessage(p, player.Username + " " + msgType + ": " + msg.Substring(msgSub));
+                    SendMessage(p, player.Id, player.Username + " " + msgType + ": " + msg.Substring(msgSub));
                 }
             }
         }
@@ -125,14 +128,56 @@ namespace HogWarp.Chat
             {
                 foreach (var p in HogWarpSdk.Server.PlayerSystem.Players)
                 {
-                    SendMessage(p, "<img id=\"" + (House)player.House + "\"/><" + (House)player.House + ">" + player.Username + ": </>" + msg);
+                    SendMessage(p, player.Id, "<img id=\"" + (House)player.House + "\"/><" + (House)player.House + ">" + player.Username + ": </>" + msg);
                 }
             }
         }
-        private void Chat_OnChatMessage(Player player, string msg)
+        private void Chat_OnChatMessage(Player sender, string msg)
         {
             if (!chatMsgOverride)
-                BuildMessage(player, msg);
+            {
+                BuildMessage(sender, msg);
+
+                foreach (var otherPlayer in HogWarpSdk.Server.PlayerSystem.Players.Where(otherPlayer => otherPlayer != sender))
+                {
+                    // Notify other clients of the overhead message update
+                    chatActor.SetOverheadText(otherPlayer, (int)sender.Id, msg);
+                }
+            }
+        }
+
+        private void Chat_PlayerJoinEvent(Player joiningPlayer)
+        {
+            log.Info($"{joiningPlayer.Username} joined the server");
+
+            foreach (var otherPlayer in HogWarpSdk.Server.PlayerSystem.Players)
+            {
+                if (otherPlayer == joiningPlayer)
+                {
+                    // Create overhead widgets for clients already online for joining player
+                    foreach (var player in HogWarpSdk.Server.PlayerSystem.Players.Where(player => player != joiningPlayer))
+                    {
+                        chatActor.CreateOverheadWidget(joiningPlayer, (int)player.Id);
+                    }
+                }
+                else
+                {
+                    chatActor.OnPlayerJoinEvent(otherPlayer, (int)joiningPlayer.Id);
+
+                    // Notify other clients to create overhead widget for joining player
+                    chatActor.CreateOverheadWidget(otherPlayer, (int)joiningPlayer.Id);
+                }
+            }
+        }
+
+        private void Chat_PlayerLeftEvent(Player player)
+        {
+            log.Info($"{player.Username} left the server");
+
+            foreach (var p in HogWarpSdk.Server.PlayerSystem.Players)
+            {
+                chatActor.OnPlayerLeftEvent(p, (int)player.Id);
+            }
         }
     }
 }
@@ -142,9 +187,25 @@ namespace HogWarp.Replicated
     public partial class BP_HogWarpChat
     {
         internal Chat.Plugin? Plugin { get; set; }
+        private Logger log = new Logger("BP_HogWarpChat");
         public partial void SendMsg(Player player, string Message)
         {
             Plugin!.ReceiveMessage(player, Message);
+        }
+
+        public partial void ServerErrorMessage(Player player, string Message)
+        {
+            log.Error($"<{player.Username}>: {Message}");
+        }
+
+        public partial void ServerInfoMessage(Player player, string Message)
+        {
+            log.Info($"<{player.Username}>: {Message}");
+        }
+
+        public partial void ServerWarnMessage(Player player, string Message)
+        {
+            log.Warn($"<{player.Username}>: {Message}");
         }
     }
 }

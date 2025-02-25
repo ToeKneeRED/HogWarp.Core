@@ -13,6 +13,104 @@ namespace HogWarp.Replicated
     [Replicated(Class = "/HogWarpChat/Actors/BP_HogWarpChat.BP_HogWarpChat", Hash = 15185056061269658332)]
     public partial class BP_HogWarpChat : Actor
     {
+        public partial void ServerWarnMessage(Player player, string Message);
+
+        [ServerRpc(Function = "ServerWarnMessage", Hash = 2894978866561376809)]
+        public void ServerWarnMessage_Impl(Player player, IBuffer data)
+        {
+            ushort length = 0;
+            var Message = data.ReadString();
+            
+            ServerWarnMessage(player, Message);
+        }
+        
+        [ClientRpc(Function = "SetOverheadText", Hash = 16923134516517361496)]
+        public void SetOverheadText(Player player, int PlayerID, string Message)
+        {
+            ushort length = 0;
+            var data = IBuffer.Create();
+            try
+            {
+                data.WriteInt32(PlayerID);
+                data.WriteString(Message);
+                
+                IRpc.Get().Call(player.InternalPlayer, Id, 15185056061269658332, 16923134516517361496, data);
+            }
+            finally
+            {
+                IBuffer.Release(data);
+            }
+        }
+        [ClientRpc(Function = "OnPlayerLeftEvent", Hash = 9225311641065661912)]
+        public void OnPlayerLeftEvent(Player player, int PlayerID)
+        {
+            ushort length = 0;
+            var data = IBuffer.Create();
+            try
+            {
+                data.WriteInt32(PlayerID);
+                
+                IRpc.Get().Call(player.InternalPlayer, Id, 15185056061269658332, 9225311641065661912, data);
+            }
+            finally
+            {
+                IBuffer.Release(data);
+            }
+        }
+        public partial void ServerInfoMessage(Player player, string Message);
+
+        [ServerRpc(Function = "ServerInfoMessage", Hash = 5025470643661998481)]
+        public void ServerInfoMessage_Impl(Player player, IBuffer data)
+        {
+            ushort length = 0;
+            var Message = data.ReadString();
+            
+            ServerInfoMessage(player, Message);
+        }
+        
+        public partial void ServerErrorMessage(Player player, string Message);
+
+        [ServerRpc(Function = "ServerErrorMessage", Hash = 18421516170846667379)]
+        public void ServerErrorMessage_Impl(Player player, IBuffer data)
+        {
+            ushort length = 0;
+            var Message = data.ReadString();
+            
+            ServerErrorMessage(player, Message);
+        }
+        
+        [ClientRpc(Function = "OnPlayerJoinEvent", Hash = 3265373916016041747)]
+        public void OnPlayerJoinEvent(Player player, int PlayerID)
+        {
+            ushort length = 0;
+            var data = IBuffer.Create();
+            try
+            {
+                data.WriteInt32(PlayerID);
+                
+                IRpc.Get().Call(player.InternalPlayer, Id, 15185056061269658332, 3265373916016041747, data);
+            }
+            finally
+            {
+                IBuffer.Release(data);
+            }
+        }
+        [ClientRpc(Function = "CreateOverheadWidget", Hash = 9758019733047434589)]
+        public void CreateOverheadWidget(Player player, int PlayerID)
+        {
+            ushort length = 0;
+            var data = IBuffer.Create();
+            try
+            {
+                data.WriteInt32(PlayerID);
+                
+                IRpc.Get().Call(player.InternalPlayer, Id, 15185056061269658332, 9758019733047434589, data);
+            }
+            finally
+            {
+                IBuffer.Release(data);
+            }
+        }
         public partial void SendMsg(Player player, string Message);
 
         [ServerRpc(Function = "SendMsg", Hash = 3936215300427668376)]
@@ -25,12 +123,13 @@ namespace HogWarp.Replicated
         }
         
         [ClientRpc(Function = "RecieveMsg", Hash = 12684788271436983199)]
-        public void RecieveMsg(Player player, string Message)
+        public void RecieveMsg(Player player, int PlayerID, string Message)
         {
             ushort length = 0;
             var data = IBuffer.Create();
             try
             {
+                data.WriteInt32(PlayerID);
                 data.WriteString(Message);
                 
                 IRpc.Get().Call(player.InternalPlayer, Id, 15185056061269658332, 12684788271436983199, data);
